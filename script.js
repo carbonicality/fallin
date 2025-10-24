@@ -77,14 +77,14 @@ const diffSettings = {
     easy: {
         name: 'easy',
         gravityMult: 0.7,
-        coinMult: 0.75,
+        coinMult: 1,
         scoreMult: 0.75,
         powerupChance: 0.20,
     },
     normal: {
         name: 'normal',
         gravityMult: 1,
-        coinMult: 1,
+        coinMult: 1.5,
         scoreMult: 1,
         powerupChance: 0.15,
     },
@@ -607,8 +607,8 @@ function update() {
             c.collected = true;
             const currentDiff = diffSettings[sDifficulty];
             const coinValue = Math.floor(c.value * currentDiff.coinMult);
-            coins = coinValue;
-            coinsTR = coinValue;
+            coins += coinValue;
+            coinsTR += coinValue;
             localStorage.setItem('coins', coins);
             if (particles.length < 150) {
                 for (let i = 0; i < 5; i++) {
