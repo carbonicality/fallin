@@ -300,3 +300,203 @@ body {
     transform:translateY(0);
     background: rgba(255,255,255,0.15);
 }
+
+#coins {
+    position:absolute;
+    top:50px;
+    right:20px;
+    font-size:14px;
+    font-size:600;
+    color: #888;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+#shop {
+    position:absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align:center;
+    pointer-events:all;
+    transition:opacity 0.3s;
+    z-index:10;
+    width: 90%;
+    max-height: 90%;
+    overflow-y:auto;
+}
+
+#shop.hidden {
+    opacity:0;
+    pointer-events:none;
+}
+
+#shop h2 {
+    font-size: 48px;
+    font-weight:700;
+    margin-bottom: 5px;
+    margin-top:45px;
+    letter-spacing: -1px;
+}
+
+.shop-header {
+    font-size: 1.25rem;
+}
+
+.coin-display {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom:10px;
+    font-style:italic;
+    color: #fff;
+}
+
+.upgrade-list {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:30px;
+    max-height:400px;
+    overflow-y:auto;
+}
+
+.upgrade-item {
+    background:rgba(255,255,255,0.1);
+    border:1px solid #333;
+    padding: 15px; 
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    transition:all 0.2s;
+}
+
+.upgrade-item:hover {
+    background:rgba(255,255,255,0.15);
+    border-color:#666;
+}
+
+.upgrade-item.maxed {
+    opacity:0.6;
+    background:rgba(255,255,255,0.05);
+}
+
+.upgrade-info {
+    text-align:left;
+    flex:1;
+}
+
+.upgrade-name {
+    font-size: 16px;
+    font-weight:600;
+    margin-bottom:4px;
+}
+
+.upgrade-level {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+}
+
+.upgrade-desc {
+    font-size: 12px;
+    color:#888;
+}
+
+.btn-upgrade {
+    background:#fff;
+    color:#000;
+    border:none;
+    padding:10px 20px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:'Geist';
+    transition:all 0.2s;
+    letter-spacing: -0.5px;
+}
+
+.btn-upgrade:hover:not(.disabled) {
+    background: #fff;
+    transform:translateY(-2px);
+}
+
+.btn-upgrade.disabled {
+    background: #888;
+    color: #fff;
+    cursor:not-allowed;
+}
+
+#shopBtn {
+    margin-top:20px;
+    background:#fff;
+    color:#000;
+}
+
+#diffSelect {
+    position:absolute;
+    top: 50%;
+    left: 50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    pointer-events:all;
+    transition:opacity 0.3s;
+    z-index:10;
+    width:90%;
+}
+
+#diffSelect.hidden {
+    opacity:0;
+    pointer-events:none;
+}
+
+#diffSelect h2 {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 40px;
+    letter-spacing: -1px;
+}
+
+.diff-buttons-large {
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.diff-btn-large {
+    background: rgba(255,255,255,0.1);
+    color:#fff;
+    border:2px solid #333;
+    padding: 20px;
+    font-size: 14px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:'Geist';
+    transition:all 0.2s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:100%;
+}
+
+.diff-btn-large:hover {
+    background:rgba(255,255,255,0.2);
+    border-color:#fff;
+    transform:translateY(-2px);
+}
+
+.diff-btn-large .diff-name {
+    font-size:24px;
+    margin-bottom: 8px;
+}
+
+.diff-btn-large .diff-desc {
+    font-size: 14px;
+    color:#ccc;
+    margin-bottom: 4px;
+}
+
+.diff-btn-large .diff-mult {
+    font-size: 12px;
+    color: #888;
+    font-weight: 400;
+}

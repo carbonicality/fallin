@@ -16,12 +16,14 @@
                 <div id="score">0</div>
                 <div id="hscore">best: 0</div>
                 <div id="depth">0m</div>
+                <div id="coins">coins: 0</div>
                 <div id="pwrUp"></div>
                 <div id="combo"></div>
                 <div id="menu">
                     <h1>fallin'</h1>
                     <p>fall and avoid the platforms!</p>
                     <button class="btn" id="startBtn">start</button>
+                    <button class="btn" id="shopBtn">shop</button>
                     <div class="save-controls">
                         <button class="btn-small" id="exportBtn">
                             <span class="material-icons">download</span>
@@ -38,12 +40,43 @@
                         <input type="file" id="importFile" accept=".json" style="display:none">
                     </div>
                 </div>
+                <div id="diffSelect" class="hidden">
+                    <h2>select difficulty</h2>
+                    <div id="diff-buttons-large">
+                        <button class="diff-btn-large" onclick="startDiff('easy')">
+                            <span class="diff-name">easy</span>
+                            <span class="diff-desc">-25% coins, -25% score</span>
+                            <span class="diff-mult">slower falling</span>
+                        </button>
+                        <button class="diff-btn-large" onclick="startDiff('normal')">
+                            <span class="diff-name">normal</span>
+                            <span class="diff-desc">balanced gameplay</span>
+                            <span class="diff-mult">standard difficulty</span>
+                        </button>
+                        <button class="diff-btn-large" onclick="startDiff('hard')">
+                            <span class="diff-name">hard</span>
+                            <span class="diff-desc">2x coins and score</span>
+                            <span class="diff-mult">faster falling</span>
+                        </button>
+                    </div>
+                    <button class="btn-small" onclick="backToTheFuture()" style="margin-top: 20px;">back</button>
+                </div>
+                <div id="shop" class="hidden">
+                    <h2>upgrade shop</h2>
+                    <div class="shop-header">
+                        <div class="coin-display">coins: <span id="coinCount">0</span></div>
+                    </div>
+                    <div id="upgradeList" class="upgrade-list"></div>
+                    <button class="btn" id="closeShop">back</button>
+                </div>
                 <div id="gameover">
                     <h2>game over :(</h2>
                     <div class="stats">
                         <div>depth: <span class="value" id="fDepth">0m</span></div>
                         <div>score: <span class="value" id="fScore">0</span></div>
                         <div>best: <span class="value" id="fBest">0</span></div>
+                        <div>coins: <span class="value" id="fCoins">0</span></div>
+                        <div>difficulty: <span class="value" id="fDifficulty">normal</span></div>
                     </div>
                     <button class="btn" id="restartBtn">play again</button>
                 </div>

@@ -19,6 +19,11 @@ let difficulty = 1;
 let sCollected = 0;
 let startTime = 0;
 let screenShake = 0;
+const savedCoins = localStorage.getItem('coins');
+const savedUpgrades = localStorage.getItem('upgrades');
+let coins = savedCoins ? parseInt(savedCoins):0;
+let coinsTR = 0;
+let sDifficulty = localStorage.getItem('difficulty') || 'normal';
 
 const player = {
     x: 200,
@@ -60,6 +65,40 @@ const achievements = {
     speedrun: {name:'speedrunner (or hakor?!?!?)', desc:'reach 200m in under 60s', unlocked:false} // misspelled hacker for satrical purposes
 }
 
+const upgrades = {
+    coinMagnet:{level:0,maxLevel:5,cost:50,multiplier:1.5,name:'coin magnet',desc:'you become a magnet for coins (shocking)'},
+    scoreBoost:{level:0,maxLevel:5,cost:100,multiplier:1.3,name:'score boost', desc:'20% extra score per level'},
+    pwDuration:{level:0,maxLevel:3,cost:200,multiplier:1.5,name:'power duration',desc:'+50% extra powerup time'},
+    sShield: {level:0,maxLevel:1,cost:500,multiplier:1,name:'starting shield',desc:'have a shield active when you start'},
+    luckyDrops:{level:0,maxLevel:5,cost:150,multiplier:1.2,name:'lucky drops',desc:'+20% powerup spawn rate'}
+}
+
+const diffSettings = {
+    easy: {
+        name: 'easy',
+        gravityMult: 0.7,
+        coinMult: 0.75,
+        scoreMult: 0.75,
+        powerupChance: 0.20,
+    },
+    normal: {
+        name: 'normal',
+        gravityMult: 1,
+        coinMult: 1,
+        scoreMult: 1,
+        powerupChance: 0.15,
+    },
+    hard: {
+        name: 'hard',
+        gravityMult: 1.3,
+        coinMult: 2,
+        scoreMult: 2,
+        powerupChance: 0.10
+    }
+};
+
+let coinPickups = [];
+
 let particles = [];
 const keys = {};
 
@@ -72,24 +111,131 @@ document.addEventListener('keydown', e => {
     }
 });
 
+if (savedUpgrades) {
+    try {
+        const parsed = JSON.parse(savedUpgrades);
+        Object.keys(parsed).forEach(key => {
+            if (upgrades[key]) {
+                upgrades[key].level = parsed[key].level;
+            }
+        });
+    } catch(e) {
+        console.error('failed to load upgrades!');
+        showNotification('failed to load upgrades :skul:');
+    }
+}
+
 document.addEventListener('keyup', e => {
     keys[e.key.toLowerCase()] = false;
 });
 
-document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('startBtn').addEventListener('click', showDiffSelect);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('exportBtn').addEventListener('click', exportSave);
+
 document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importFile').click();
 });
+
 document.getElementById('importFile').addEventListener('change', importSave);
 document.getElementById('copyBtn').addEventListener('click', copySave);
+
 document.getElementById('pasteBtn').addEventListener('click', () => {
     const code = prompt('paste your save code:');
     if (code) {
         importCode(code);
     }
 });
+
+function showDiffSelect() {
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('diffSelect').classList.remove('hidden');
+}
+
+function startDiff(diff) {
+    sDifficulty = diff;
+    localStorage.setItem('difficulty', diff);
+    document.getElementById('diffSelect').classList.add('hidden');
+    startGame();
+}
+
+function backToTheFuture() { //lol
+    document.getElementById('diffSelect').classList.add('hidden');
+    document.getElementById('menu').classList.remove('hidden');
+}
+
+window.backToTheFuture = backToTheFuture;
+window.startDiff = startDiff;
+
+function openShop() {
+    gameState = 'shop';
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('shop').classList.remove('hidden');
+    updShopUI();
+}
+
+function closeShop() {
+    gameState = 'menu';
+    document.getElementById('shop').classList.add('hidden');
+    document.getElementById('menu').classList.remove('hidden');
+}
+
+function updShopUI() {
+    document.getElementById('coinCount').textContent = coins;
+    const container = document.getElementById('upgradeList');
+    container.innerHTML = '';
+    Object.keys(upgrades).forEach(key => {
+        const upg = upgrades[key];
+        const cost = Math.floor(upg.cost * Math.pow(upg.multiplier,upg.level));
+        const maxed =upg.level >= upg.maxLevel;
+        const div = document.createElement('div');
+        div.className = 'upgrade-item';
+        if (maxed) div.classList.add('maxed');
+        div.innerHTML = `
+        <div class="upgrade-info">
+            <div class="upgrade-name">${upg.name} <span class="upgrade-level">lv ${upg.level}/${upg.maxLevel}</span><div>
+            <div class="upgrade-desc">${upg.desc}</div>
+        </div>
+        <button class="btn-upgrade ${coins < cost || maxed ? 'disabled' : ''}" onclick="buyUpgrade('${key}')" ${coins < cost || maxed ? 'disabled' : ''}>${maxed ? 'MAXED' : `${cost}`}</button>`;
+        container.appendChild(div);
+    });
+}
+
+function buyUpgrade(key) {
+    const upg = upgrades[key];
+    const cost = Math.floor(upg.cost * Math.pow(upg.multiplier, upg.level));
+    if (coins >= cost && upg.level < upg.maxLevel) {
+        coins -= cost;
+        upg.level++;
+        localStorage.setItem('coins', coins);
+        localStorage.setItem('upgrades', JSON.stringify(upgrades));
+        updShopUI();
+        showNotification(`upgraded ${upg.name}`);
+    }
+}
+
+window.buyUpgrade = buyUpgrade;
+
+document.getElementById('shopBtn').addEventListener('click', openShop);
+document.getElementById('closeShop').addEventListener('click', closeShop);
+
+function setDifficulty(diff) {
+    sDifficulty = diff;
+    localStorage.setItem('difficulty', diff);
+    updDiffUI();
+    showNotification(`difficulty set to ${diffSettings[diff].name}`);
+}
+
+function updDiffUI() {
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.difficulty === sDifficulty) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+window.setDifficulty = setDifficulty;
 
 function exportSave() {
     const saveData = {
@@ -198,6 +344,15 @@ function startGame() {
     startTime = Date.now();
     sCollected = 0;
     screenShake = 0;
+    coinsTR= 0;
+    coinPickups = [];
+
+    if (upgrades.sShield.level > 0) {
+        activePwr = {...pwrTypes.shield,type:'shield'};
+        pwrT = pwrTypes.shield.duration;
+        pwrUpEl.textContent = activePwr.name;
+        pwrUpEl.classList.add('active');
+    }
     
     for (let i = 0; i < 20; i++) {
         genPlat();
@@ -251,8 +406,25 @@ function genPlat() {
         platforms.push(p);
     }
 
-    if (Math.random() < 0.15) {
+    const currentDiff = diffSettings[sDifficulty];
+    if (Math.random() < currentDiff.powerupChance) {
         pwrups.push(createPwr(gapX + gapWidth / 2 - 8, newY - 60));
+    }
+
+    const coinChance = 0.3 + (upgrades.luckyDrops.level * 0.06);
+    if (Math.random() < coinChance) {
+        const numCoins = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numCoins; i++) {
+            coinPickups.push({
+                x:gapX + Math.random() * gapWidth - 8,
+                y:newY - 40 - Math.random() * 60,
+                width: 12,
+                height:12,
+                collected: false,
+                pulse: Math.random() * Math.PI * 2,
+                value: 1
+            });
+        }
     }
 }
 
@@ -286,7 +458,8 @@ function update() {
     }
 
     difficulty = 1+(depth/500);
-    player.gravity = 0.4*difficulty;
+    const currentDiff = diffSettings[sDifficulty];
+    player.gravity = 0.4*difficulty*currentDiff.gravityMult;
     const minGap = 100 - (difficulty*5);
     const maxGap = 200 - (difficulty*10);
 
@@ -309,7 +482,9 @@ function update() {
     const newDepth = Math.max(depth, Math.floor((player.y - 200)/10));
     if (newDepth > depth) {
         const depgain = newDepth- depth;
-        score += depgain * 2;
+        const scoreMultiplier = 1 + (upgrades.scoreBoost.level * 0.2);
+        const currentDiff = diffSettings[sDifficulty];
+        score += depgain * 2 * scoreMultiplier * currentDiff.scoreMult;
         depth = newDepth;
     }
 
@@ -405,7 +580,8 @@ function update() {
 
             activePwr = pwrTypes[p.type];
             activePwr.type = p.type;
-            pwrT = activePwr.duration;
+            const durationBoost = 1+(upgrades.pwDuration.level * 0.5);
+            pwrT = Math.floor(activePwr.duration * durationBoost);
             pwrUpEl.textContent = activePwr.name;
             pwrUpEl.classList.add('active');
             if (particles.length < 150) {
@@ -422,6 +598,33 @@ function update() {
             }
         }
     });
+
+    const magnetRadius = 30 + (upgrades.coinMagnet.level * 15);
+    coinPickups.forEach(c => {
+        c.pulse += 0.15;
+        const dist = Math.hypot(player.x + player.width/2 - (c.x + c.width/2), player.y + player.height/2 - (c.y + c.height/2));
+        if (!c.collected && dist < magnetRadius) {
+            c.collected = true;
+            const currentDiff = diffSettings[sDifficulty];
+            const coinValue = Math.floor(c.value * currentDiff.coinMult);
+            coins = coinValue;
+            coinsTR = coinValue;
+            localStorage.setItem('coins', coins);
+            if (particles.length < 150) {
+                for (let i = 0; i < 5; i++) {
+                    particles.push({
+                        x:c.x + c.width/2,
+                        y:c.y + c.height/2,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        life: 30,
+                        maxLife: 30
+                    });
+                }
+            }
+        }
+    });
+    coinPickups = coinPickups.filter(c => c.y < cameraY + canvas.height + 200 && !c.collected);
     pwrups = pwrups.filter(p => p.y < cameraY + canvas.height + 200 && !p.collected);
     if (pwrT > 0) {
         pwrT--;
@@ -444,6 +647,7 @@ function update() {
     }
     scoreEl.textContent = Math.floor(score);
     depthEl.textContent = `${depth}m`;
+    document.getElementById('coins').textContent = `coins: ${coins}`;
 }
 
 function showCombo(c) {
@@ -508,6 +712,20 @@ function draw() {
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
     }
+
+    coinPickups.forEach(c => {
+        const pulse = Math.sin(c.pulse) * 0.2 + 1;
+        ctx.save();
+        ctx.translate(c.x + c.width/2, c.y+c.height/2);
+        ctx.scale(pulse,pulse);
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0,0,c.width/2,0,Math.PI*2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+    });
 
     particles.forEach(p => {
         ctx.fillStyle = `rgba(255,255,255,${p.life / p.maxLife * 0.8})`;
@@ -595,6 +813,8 @@ function endGame() {
     document.getElementById('fScore').textContent = Math.floor(score);
     document.getElementById('fBest').textContent = hScore;
     document.getElementById('gameover').classList.add('visible');
+    document.getElementById('fCoins').textContent = coinsTR;
+    document.getElementById('fDifficulty').textContent = diffSettings[sDifficulty].name;
 }
 
 function gameLoop() {
