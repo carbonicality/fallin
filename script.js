@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const depthEl = document.getElementById('depth');
 const pwrUpEl = document.getElementById('pwrUp');
 const comboEl = document.getElementById('combo');
+const savedACH = localStorage.getItem('achievements');
 
 let gameState = 'menu';
 let score = 0;
@@ -14,6 +15,10 @@ let hScore = localStorage.getItem('hscore') || 0;
 let depth = 0;
 let combo = 0;
 let cameraY = 0;
+let difficulty = 1;
+let sCollected = 0;
+let startTime = 0;
+let screenShake = 0;
 
 const player = {
     x: 200,
@@ -41,9 +46,18 @@ let activePwr = null;
 let pwrT = 0;
 
 const pwrTypes = {
-    shield: {color:'#fff', duration:300, name:'shield'},
-    slow: {color:'#888', duration:250, name:'slow-mo'},
-    shrink: {color:'#fff', duration:200, name:'shrink'}
+    shield: {color:'#fff', duration:300, name:'shield', rarity:0.3},
+    slow: {color:'#888', duration:250, name:'slow-mo', rarity:0.25},
+    shrink: {color:'#fff', duration:200, name:'shrink', rarity:0.2},
+    magnet: {color:'#888', duration:250, name:'magnet', rarity:0.15},
+    ghost: {color:'#fff', duration:180, name:'ghost', rarity:0.1}
+}
+
+const achievements = {
+    first100: {name:'100 falls!', desc:'reach 100m', unlocked:'false', depth:100},
+    combo10: {name:'10x combo!!!!!!', desc:'reach a 10x combo', unlocked:'false', combo:10},
+    shield5: {name:'unbeatable', desc:'get 5 shields in one run', unlocked:false},
+    speedrun: {name:'speedrunner (or hakor?!?!?)', desc:'reach 200m in under 60s', unlocked:false} // misspelled hacker for satrical purposes
 }
 
 let particles = [];
@@ -64,6 +78,105 @@ document.addEventListener('keyup', e => {
 
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('exportBtn').addEventListener('click', exportSave);
+document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', importSave);
+document.getElementById('copyBtn').addEventListener('click', copySave);
+document.getElementById('pasteBtn').addEventListener('click', () => {
+    const code = prompt('paste your save code:');
+    if (code) {
+        importCode(code);
+    }
+});
+
+function exportSave() {
+    const saveData = {
+        version: '1.0',
+        timestamp: Date.now(),
+        hscore: hScore,
+        achievements: achievements
+    };
+    const dataStr=JSON.stringify(saveData,null,2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fallin_save${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('save exported!');
+}
+
+function importSave(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const saveData = JSON.parse(event.target.result);
+            applySD(saveData);
+        } catch (err) {
+            showNotification('invalid save file :skul:');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function copySave() {
+    const saveData = {
+        version: '1.0',
+        timestamp: Date.now(),
+        hscore: hScore,
+        achievements: achievements
+    };
+    const encoded = btoa(JSON.stringify(saveData));
+    navigator.clipboard.writeText(encoded).then(() => {
+        showNotification('save code copied!')
+    }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = encoded;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showNotification('save code copied!');
+    });
+}
+
+function importCode(code) {
+    try {
+        const encoded = atob(code.trim());
+        const saveData = JSON.parse(encoded);
+        applySD(saveData);
+    } catch (err) {
+        showNotification('invalid save code :skul:');
+        console.error(err);
+    }
+}
+
+function applySD(saveData) {
+    if (!saveData.version || !saveData.hScore) {
+        showNotification('invalid save data :skul:');
+        return;
+    }
+    hScore = saveData.hscore;
+    localStorage.setItem('hscore', hScore);
+    if (saveData.achievements) {
+        Object.keys(saveData.achievements).forEach(key => {
+            if (achievements[key]) {
+                achievements[key].unlocked = saveData.achievements[key].unlocked;
+            }
+        });
+        localStorage.setItem('achievements', JSON.stringify(achievements));
+    }
+    document.getElementById('hscore').textContent = `best: ${hScore}`;
+    document.getElementById('fBest').textContent = hScore;
+    showNotification('save imported!');
+}
 
 function startGame() {
     gameState = 'playing';
@@ -82,6 +195,9 @@ function startGame() {
     particles = [];
     activePwr = null;
     pwrT = 0;
+    startTime = Date.now();
+    sCollected = 0;
+    screenShake = 0;
     
     for (let i = 0; i < 20; i++) {
         genPlat();
@@ -141,20 +257,25 @@ function genPlat() {
 }
 
 function createPwr(x,y) {
-    const types = Object.keys(pwrTypes);
-    const type = types[Math.floor(Math.random() * types.length)];
-    return {
-        x: x,
-        y: y,
-        width: 16,
-        height: 16,
-        type: type,
-        collected: false,
-        pulse: 0
-    };
+    const types=Object.keys(pwrTypes);
+    let totalWeight = types.reduce((sum,t) => sum + pwrTypes[t].rarity,0);
+    let random =Math.random()*totalWeight; // /dev/urandom ahh
+    let type = types[0];
+    for (let t of types) {
+        random -= pwrTypes[t].rarity;
+        if (random <= 0) {
+            type =t;
+            break;
+        }
+    }
+    return {x,y,width:16,height:16,type,collected:false,pulse:0};
 }
 
 function update() {
+    if (screenShake > 0) {
+        screenShake *= 0.9;
+        if (screenShake < 0.5) screenShake = 0;
+    }
     if (gameState !== 'playing') return;
     if (keys['arrowleft'] || keys['a']) {
         player.vx = -player.moveSpeed;
@@ -163,6 +284,11 @@ function update() {
     } else {
         player.vx *= 0.85;
     }
+
+    difficulty = 1+(depth/500);
+    player.gravity = 0.4*difficulty;
+    const minGap = 100 - (difficulty*5);
+    const maxGap = 200 - (difficulty*10);
 
     player.x += player.vx;
 
@@ -186,6 +312,10 @@ function update() {
         score += depgain * 2;
         depth = newDepth;
     }
+
+    if (depth >= 100) unlockACH('first100');
+    if (depth >= 200 && (Date.now() - startTime) < 60000) unlockACH('speedrun');
+    if (combo >= 10) unlockACH('combo10');
 
     platforms.forEach(p => {
         p.age++;
@@ -248,7 +378,7 @@ function update() {
     gaps = gaps.filter(g => g.y < cameraY + canvas.height + 200 && g.y > -1000);
 
     // ive been having a memory leak for so long and this code fixes it so NOTE TO SELF DONT DELETE THIS
-    let lastPlay = player.y;
+    let lastPlayY = player.y;
     if (platforms.length > 0) {
         lastPlayY = platforms[platforms.length -1].y;
     }
@@ -267,6 +397,12 @@ function update() {
         player.y + player.height /2 - (p.y + p.height/2));
         if (!p.collected && dist < 30) {
             p.collected = true;
+
+            if (p.type === 'shield') {
+                sCollected++;
+                if (sCollected >= 5) unlockACH('shield5');
+            }
+
             activePwr = pwrTypes[p.type];
             activePwr.type = p.type;
             pwrT = activePwr.duration;
@@ -320,11 +456,48 @@ function showCombo(c) {
     },800);
 }
 
+if (savedACH) {
+    try {
+        const parsed = JSON.parse(savedACH);
+        Object.keys(parsed).forEach(key => {
+            if (achievements[key]) {
+                achievements[key].unlocked = parsed[key].unlocked;
+            }
+        });
+    } catch(e) {
+        console.error('failed to load achievements :(');
+        showNotification('failed to load achievements :(');
+    }
+}
+
+function showNotification(text) {
+    const container = document.getElementById('notifications');
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = `${text}`;
+    container.appendChild(notif);
+    setTimeout(() => notif.classList.add('show'),10);
+    setTimeout(() => {
+        notif.classList.add('hide');
+        setTimeout(() => notif.remove(), 300);
+    },3000);
+}
+
+function unlockACH(key) {
+    if (!achievements[key].unlocked) {
+        achievements[key].unlocked =true;
+        localStorage.setItem('achievements', JSON.stringify(achievements));
+        showNotification(achievements[key].name);
+    }
+}
+
 function draw() {
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.save();
-    ctx.translate(0, -cameraY);
+    const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    ctx.translate(shakeX,shakeY-cameraY);
     ctx.strokeStyle = '#1a1a1a';
     ctx.lineWidth = 1;
     const gridStart = Math.floor(cameraY / 80) * 80;
@@ -412,6 +585,7 @@ function draw() {
 }
 
 function endGame() {
+    screenShake=15;
     gameState = 'gameover';
     if (score > hScore) {
         hScore = Math.floor(score);

@@ -7,6 +7,7 @@
         <title>fallin</title>
         <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="./styles.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     </head>
     <body>
         <div id="gcontainer">
@@ -21,6 +22,21 @@
                     <h1>fallin'</h1>
                     <p>fall and avoid the platforms!</p>
                     <button class="btn" id="startBtn">start</button>
+                    <div class="save-controls">
+                        <button class="btn-small" id="exportBtn">
+                            <span class="material-icons">download</span>
+                        </button>
+                        <button class="btn-small" id="importBtn">
+                            <span class="material-icons">upload</span>
+                        </button>
+                        <button class="btn-small" id="copyBtn">
+                            <span class="material-icons">content_copy</span>
+                        </button>
+                        <button class="btn-small" id="pasteBtn">
+                            <span class="material-icons">content_paste</span>
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display:none">
+                    </div>
                 </div>
                 <div id="gameover">
                     <h2>game over :(</h2>
@@ -32,6 +48,7 @@
                     <button class="btn" id="restartBtn">play again</button>
                 </div>
                 <div id="controls">← → or A D to move | ESC to pause</div>
+                <div id="notifications"></div>
             </div>
         </div>
         <script src="./script.js"></script>
