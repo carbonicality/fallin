@@ -1,3 +1,4 @@
+<!-- 2025 The Fallin Authors (chromium source ahh)-->
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -8,6 +9,31 @@
         <link href="./styles.css" rel="stylesheet">
     </head>
     <body>
-        
+        <div id="gcontainer">
+            <canvas id="gcanvas"></canvas>
+            <div id="ui">
+                <div id="score">0</div>
+                <div id="hscore">best: 0</div>
+                <div id="depth">0m</div>
+                <div id="pwrUp"></div>
+                <div id="combo"></div>
+                <div id="menu">
+                    <h1>fallin'</h1>
+                    <p>fall and avoid the platforms!</p>
+                    <button class="btn" id="startBtn">start</button>
+                </div>
+                <div id="gameover">
+                    <h2>game over :(</h2>
+                    <div class="stats">
+                        <div>depth: <span class="value" id="fDepth">0m</span></div>
+                        <div>score: <span class="value" id="fScore">0</span></div>
+                        <div>best: <span class="value" id="fBest">0</span></div>
+                    </div>
+                    <button class="btn" id="restartBtn">play again</button>
+                </div>
+                <div id="controls">← → or A D to move | ESC to pause</div>
+            </div>
+        </div>
+        <script src="./script.js"></script>
     </body>
 </html>
